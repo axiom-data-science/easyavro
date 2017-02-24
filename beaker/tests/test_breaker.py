@@ -1,5 +1,6 @@
 #!python
 # coding=utf-8
+import os
 import uuid
 from os.path import join as opj
 from os.path import dirname as dn
@@ -21,7 +22,9 @@ L.handlers = [logging.StreamHandler()]
 class TestBeaker(TestCase):
 
     def setUp(self):
-        c = CachedSchemaRegistryClient(url='http://localhost:50002')
+
+        self.testhost = os.environ.get('BEAKER_TESTING_HOST', 'localhost')
+        c = CachedSchemaRegistryClient(url='http://{}:50002'.format(self.testhost))
 
         self.topic = 'beaker-testing-topic'
 
@@ -38,8 +41,8 @@ class TestBeaker(TestCase):
 
         # Produce
         bp = BeakerProducer(
-            schema_registry_url='http://localhost:50002',
-            kafka_brokers=['localhost:50001'],
+            schema_registry_url='http://{}:50002'.format(self.testhost),
+            kafka_brokers=['{}:50001'.format(self.testhost)],
             kafka_topic=self.topic
         )
         m1 = str(uuid.uuid4())
@@ -60,8 +63,8 @@ class TestBeaker(TestCase):
 
         # Consume
         bc = BeakerConsumer(
-            schema_registry_url='http://localhost:50002',
-            kafka_brokers=['localhost:50001'],
+            schema_registry_url='http://{}:50002'.format(self.testhost),
+            kafka_brokers=['{}:50001'.format(self.testhost)],
             consumer_group='beaker.testing',
             kafka_topic=self.topic
         )
