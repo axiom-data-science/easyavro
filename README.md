@@ -1,6 +1,6 @@
 # Beaker  [![build status](http://git.axiom/axiom/beaker/badges/master/build.svg)](http://git.axiom/axiom/beaker/commits/master)
 
-A ~~lab assistant~~ python helper for producing and consuming Kafka topics. Simplicity and the ability to execute a function for each message consumed is the top priority. This is not designed for high throughput.
+A ~~lab assistant~~ python helper for producing and consuming `avro` schema'd Kafka topics. Simplicity and the ability to execute a function for each message consumed is the top priority. This is not designed for high throughput.
 
 ![Beaker](https://upload.wikimedia.org/wikipedia/en/5/59/Beaker_%28Muppet%29.jpg)
 
@@ -120,7 +120,14 @@ docker run -d --net=host \
       landoop/fast-data-dev
 ```
 
-**Run the tests**
+#### Docker
+
+```
+docker build -t beaker .
+docker run beaker
+```
+
+#### No Docker
 
 ```
 py.test -s -rxs -v
