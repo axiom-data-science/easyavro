@@ -49,3 +49,5 @@ RUN conda install -y \
 ENV CODE_HOME /beaker
 WORKDIR $CODE_HOME
 COPY . $CODE_HOME
+
+CMD ["py.test", "-s", "-rxs", "-v"]
