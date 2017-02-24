@@ -1,0 +1,5 @@
+{
+    "name": "beaker.testing",
+    "type": "enum",
+    "symbols" : ["DELETE", "UPDATE", "ADD"]
+}

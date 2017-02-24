@@ -1,0 +1,15 @@
+stages:
+  - test
+
+variables:
+  BROKER_PORT: 50001
+  REGISTRY_PORT: 50002
+  RUNTESTS: 0
+  DISABLE: elastic,hbase 
+
+test:
+  stage: test
+  services:
+    - landoop/fast-data-dev
+  script:
+    - py.test -s -rxs -v

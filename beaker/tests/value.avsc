@@ -1,0 +1,15 @@
+{
+    "name": "beaker.testing",
+    "type": "record",
+    "doc": "Beaker testing schema",
+    "fields": [
+        {
+            "name": "uuid",
+            "type": "string"
+        },
+        {
+            "name": "properties",
+            "type": [ "null", {"type": "map", "values": "string"} ]
+        }
+    ]
+}

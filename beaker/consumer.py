@@ -1,53 +1,58 @@
 #!python
 # coding=utf-8
+import logging
+from typing import List, Callable
 
 from confluent_kafka import KafkaError
 from confluent_kafka.avro import AvroConsumer
 from confluent_kafka.avro.serializer import SerializerError
 
-from . import (SCHEMA_REGISTRY_URL,
-               KAFKA_BROKERS,
-               CONSUMER_GROUP,
-               KAFKA_TOPIC)
+L = logging.getLogger('beaker')
+L.propagate = False
+L.addHandler(logging.NullHandler())
 
 
 class BeakerConsumer(AvroConsumer):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+                 schema_registry_url: str,
+                 kafka_brokers: List[str],
+                 consumer_group: str,
+                 kafka_topic: str,
+                 topic_config: dict = None,
+                 offset: str = None
+                ) -> None:
 
-        reqs = [
-            SCHEMA_REGISTRY_URL,
-            KAFKA_BROKERS,
-            CONSUMER_GROUP,
-            KAFKA_TOPIC
-        ]
+        topic_config = topic_config or {}
+        self.kafka_topic = kafka_topic
 
-        for r in reqs:
-            if r not in kwargs:
-                raise ValueError(
-                    'Named parameter "{}" must be supplied'.format(r)
-                )
-            setattr(self, r, kwargs.pop(r))
+        # A simplier way to set the topic offset
+        if offset is not None and 'auto.offset.reset' not in topic_config:
+            topic_config['auto.offset.reset'] = offset
 
         super().__init__(
             {
-                'bootstrap.servers': ','.join(getattr(self, KAFKA_BROKERS)),
-                'schema.registry.url': getattr(self, SCHEMA_REGISTRY_URL),
+                'bootstrap.servers': ','.join(kafka_brokers),
+                'schema.registry.url': schema_registry_url,
                 'client.id': self.__class__.__name__,
-                'group.id': getattr(self, CONSUMER_GROUP),
+                'group.id': consumer_group,
                 'api.version.request': 'true',
                 'debug': 'fetch',
-                'default.topic.config': {'auto.offset.reset': 'earliest'}
+                'default.topic.config': topic_config
             }
         )
 
-    def consume(self, on_recieve=None, timeout=None):
+    def consume(self,
+                on_recieve: Callable[[str, str], None],
+                timeout: int = None
+               ) -> None:
 
         if on_recieve is None:
             def on_recieve(k, v):
-                print("Recieved message:\nKey: {}\nValue: {}".format(k, v))
+                L.info("Recieved message:\nKey: {}\nValue: {}".format(k, v))
 
-        self.subscribe([getattr(self, KAFKA_TOPIC)])
+        self.subscribe([self.kafka_topic])
+        L.info("Starting consumer...")
         while True:
             try:
                 msg = self.poll(timeout=timeout)
@@ -55,13 +60,15 @@ class BeakerConsumer(AvroConsumer):
                     continue
                 if msg.error():
                     if msg.error().code() == KafkaError._PARTITION_EOF:
-                        print("No more messages")
+                        L.debug("No more messages")
                         break
-                    print(msg.error())
+                    L.error(msg.error())
 
                 # Call the function we passed in
                 on_recieve(msg.key(), msg.value())
             except SerializerError as e:
-                print("Message deserialization failed for {}: {}".format(msg, e))
+                L.warning('Message deserialization failed for "{}: {}"'.format(msg, e))
 
+        L.debug("Closing consumer...")
         self.close()
+        L.info("Done consuming")
