@@ -66,7 +66,8 @@ class TestBeaker(TestCase):
             schema_registry_url='http://{}:50002'.format(self.testhost),
             kafka_brokers=['{}:50001'.format(self.testhost)],
             consumer_group='beaker.testing',
-            kafka_topic=self.topic
+            kafka_topic=self.topic,
+            offset='earliest'
         )
         recieved = []
 
@@ -75,4 +76,4 @@ class TestBeaker(TestCase):
             L.info("Recieved message")
 
         bc.consume(on_recieve=on_recieve)
-        assert len(recieved) == 9
+        assert recieved[len(records) * -1:] == records
