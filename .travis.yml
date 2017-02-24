@@ -5,9 +5,8 @@ services:
 
 before_install:
   - docker pull landoop/fast-data-dev
-  - docker run -d --net=host -e BROKER_PORT=50001 -e REGISTRY_PORT=50002 -e RUNTESTS=0 -e DISABLE=elastic,hbase --name beaker-testing landoop/fast-data-dev
-  - docker ps -a
-  - sleep 20
+  - docker run -d -e BROKER_PORT=50001 -e REGISTRY_PORT=50002 -e RUNTESTS=0 -e DISABLE=elastic,hbase --name beakertesting landoop/fast-data-dev
+  - docker build -t beaker .
 
 script:
-  - py.test -s -rxs -v
+  - docker run --link beakertesting -e BEAKER_TESTING_HOST=beakertesting beaker
