@@ -53,21 +53,23 @@ class BeakerConsumer(AvroConsumer):
 
         self.subscribe([self.kafka_topic])
         L.info("Starting consumer...")
-        while True:
-            try:
-                msg = self.poll(timeout=timeout)
-                if msg is None:
-                    continue
-                if msg.error():
-                    if msg.error().code() == KafkaError._PARTITION_EOF:
-                        L.debug("No more messages")
-                        break
-                    L.error(msg.error())
-
-                # Call the function we passed in
-                on_recieve(msg.key(), msg.value())
-            except SerializerError as e:
-                L.warning('Message deserialization failed for "{}: {}"'.format(msg, e))
+        try:
+            while True:
+                try:
+                    msg = self.poll(timeout=timeout)
+                    if msg is None:
+                        continue
+                    if msg.error():
+                        if msg.error().code() == KafkaError._PARTITION_EOF:
+                            continue
+                        else:
+                            L.error(msg.error())
+                    # Call the function we passed in
+                    on_recieve(msg.key(), msg.value())
+                except SerializerError as e:
+                    L.warning('Message deserialization failed for "{}: {}"'.format(msg, e))
+        except KeyboardInterrupt:
+            L.info("Aborted via keyboard")
 
         L.debug("Closing consumer...")
         self.close()
