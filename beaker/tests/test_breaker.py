@@ -75,5 +75,5 @@ class TestBeaker(TestCase):
             recieved.append((key, value))
             L.info("Recieved message")
 
-        bc.consume(on_recieve=on_recieve)
+        bc.consume(on_recieve=on_recieve, timeout=1, loop=False)
         assert recieved[len(records) * -1:] == records

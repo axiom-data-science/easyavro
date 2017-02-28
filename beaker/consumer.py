@@ -43,7 +43,8 @@ class BeakerConsumer(AvroConsumer):
 
     def consume(self,
                 on_recieve: Callable[[str, str], None],
-                timeout: int = None) -> None:
+                timeout: int = None,
+                loop: bool = True) -> None:
 
         if on_recieve is None:
             def on_recieve(k, v):
@@ -59,7 +60,10 @@ class BeakerConsumer(AvroConsumer):
                         continue
                     if msg.error():
                         if msg.error().code() == KafkaError._PARTITION_EOF:
-                            continue
+                            if loop is True:
+                                continue
+                            else:
+                                break
                         else:
                             L.error(msg.error())
                     # Call the function we passed in
