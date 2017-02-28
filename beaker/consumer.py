@@ -20,8 +20,7 @@ class BeakerConsumer(AvroConsumer):
                  consumer_group: str,
                  kafka_topic: str,
                  topic_config: dict = None,
-                 offset: str = None
-                ) -> None:
+                 offset: str = None) -> None:
 
         topic_config = topic_config or {}
         self.kafka_topic = kafka_topic
@@ -44,8 +43,7 @@ class BeakerConsumer(AvroConsumer):
 
     def consume(self,
                 on_recieve: Callable[[str, str], None],
-                timeout: int = None
-               ) -> None:
+                timeout: int = None) -> None:
 
         if on_recieve is None:
             def on_recieve(k, v):
