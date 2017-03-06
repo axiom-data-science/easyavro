@@ -36,7 +36,6 @@ class BeakerConsumer(AvroConsumer):
                 'client.id': self.__class__.__name__,
                 'group.id': consumer_group,
                 'api.version.request': 'true',
-                'debug': 'fetch',
                 'default.topic.config': topic_config
             }
         )
