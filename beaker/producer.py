@@ -30,8 +30,7 @@ class BeakerProducer(AvroProducer):
                  kafka_brokers: List[str],
                  kafka_topic: str,
                  value_schema: schema.Schema = None,
-                 key_schema: schema.Schema = None,
-                ) -> None:
+                 key_schema: schema.Schema = None) -> None:
 
         self.kafka_topic = kafka_topic
         self._client = CachedSchemaRegistryClient(
