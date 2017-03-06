@@ -22,8 +22,8 @@ bp = BeakerProducer(
 
 # Records are (key, value) tuples
 records = [
-    (None, 'foo'),
-    (None, 'bar'),
+    ('foo', 'foo'),
+    ('bar', 'bar'),
 ]
 bp.produce(records)
 ```
@@ -43,11 +43,34 @@ bp = BeakerProducer(
 
 # Records are (key, value) tuples
 records = [
+    ('foo', 'foo'),
+    ('bar', 'bar'),
+]
+bp.produce(records)
+```
+
+If you don't have a key schema, just pass anything other than `None` to the
+constructor and use `None` as the value of the key.
+
+```python
+from beaker import BeakerProducer
+
+bp = BeakerProducer(
+    schema_registry_url='http://localhost:50002',
+    kafka_brokers=['localhost:50001'],
+    kafka_topic='my-topic',
+    value_schema=SomeAvroSchemaObject,
+    key_schema='not_used_because_no_keys_in_the_records',
+)
+
+# Records are (key, value) tuples
+records = [
     (None, 'foo'),
     (None, 'bar'),
 ]
 bp.produce(records)
 ```
+
 
 #### Consumer
 
