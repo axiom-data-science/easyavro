@@ -1,5 +1,11 @@
 sudo: required
 
+language: python
+
+python:
+  - "3.5"
+  - "3.6"
+
 services:
   - docker
 
@@ -8,5 +14,50 @@ before_install:
   - docker run -d -e BROKER_PORT=50001 -e REGISTRY_PORT=50002 -e RUNTESTS=0 -e DISABLE=elastic,hbase --name easyavrotesting landoop/fast-data-dev
   - docker build -t easyavro .
 
+install:
+  # Install miniconda
+  # -----------------
+  - export CONDA_BASE=http://repo.continuum.io/miniconda/Miniconda
+  - wget ${CONDA_BASE}3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+
+  # Create the basic testing environment
+  # ------------------------------------
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set show_channel_urls True
+  - conda config --add create_default_packages pip
+  - conda update --quiet conda
+
+  # Add 3rd party channels
+  # ------------------------------------
+  - conda config --add channels conda-forge
+
+  # Create our environment
+  # ------------------------------------
+  - ENV_NAME='test-environment'
+  - conda create --quiet -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION
+  - source activate $ENV_NAME
+
+  # Install testing requirements
+  # ------------------------------------
+  - conda install --file requirements.txt --file requirements-test.txt
+  - conda list --export
+
 script:
   - docker run --link easyavrotesting -e EASYAVRO_TESTING_HOST=easyavrotesting easyavro
+  - conda install -n root conda-build anaconda-client
+  - conda build conda-recipe --python $TRAVIS_PYTHON_VERSION
+  - conda install easyavro --use-local
+
+after_success:
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
+    anaconda -t $ANACONDA_TOKEN upload --force -u axiom-data-science $HOME/miniconda/**/easyavro-*.tar.bz2;
+    fi
+
+deploy:
+  provider: releases
+  api_key:
+    secure: n0Mbgos5LqlovXQW74J+j73z6OXKX2/FYEZZd6rHu3ex+2KmgwAgzdsPD5HMmSzO1do9B+avhUZSyGDcHz2B96jsQaUJou95wtm9h5soDoiF0FSDPH7i7bdZfZxaMw3KOH/5ousw1XJwQQQOhiJFjEFnsjarGEu/ofWO1Mxev9RwGNiTkK2RYCvLbCcY6us6Ptq7VB+YjAM1juA7LZM3+fxzqTqDT6g2vjW453cgZGw1guB/HOKJuYtOWRjK7uiO16KfychkUHj+p1iGTeNNUO4mvSDSs2nqZ2GbWSMibfow55lJtlKaLPMcouKZzKSb0X2BCQ2X5Mrml3nNIIVGbjprFYiq3BhTFMcci5HVRY29Tg71UA7NszCBlVU/X9rfTtqpsuZpXSvXBY6BzT1242SrgZEqflkEvJAvyhBLQ4aHBjfI0du+ZDS4/9N05ye/DkyKywjusoLcW/C5m1raXs9PenpNO843LIih2AKA40pEh7j6AsiidfIMToFTNFTlPMR0x+Rs+EaKA54+5QfyA2Uafa5Kib4kSj4RdqgE/KYxuf0B7CO4QWAOclfhanXpGn8jXFtExWa1roDmT9HI5aTBUBdWXjU2ehNJ+kVdlbpnaDv8vJSiHjUgucQ8qHLbYSguY/94ahFrU4IWRFDNW6b7y+3hKLy+c0MaLpbHz58=
+  on:
+    tags: true

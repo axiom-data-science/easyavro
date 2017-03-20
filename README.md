@@ -5,6 +5,15 @@ A ~~lab assistant~~ python helper for producing and consuming `avro` schema'd Ka
 ![EasyAvro](https://upload.wikimedia.org/wikipedia/en/5/59/Beaker_%28Muppet%29.jpg)
 
 
+## Installation
+
+```bash
+conda install -c axiom-data-science EasyAvro
+```
+
+There is py PyPi package. I know, I know. Feel free to submit a PR to integrate it into Travis.
+
+
 ## Usage
 
 #### Producer
