@@ -7,17 +7,17 @@ variables:
   REGISTRY_PORT: "50002"
   RUNTESTS: "0"
   DISABLE: "elastic,hbase"
-  BEAKER_TESTING_HOST: landoop__fast-data-dev
+  EASYAVRO_TESTING_HOST: landoop__fast-data-dev
 
 build:
   stage: build
   script:
-    - docker build -t beaker:$CI_BUILD_REF_NAME .
+    - docker build -t easyavro:$CI_BUILD_REF_NAME .
 
 test:
   stage: test
   services:
     - landoop/fast-data-dev
-  image: beaker:$CI_BUILD_REF_NAME
+  image: easyavro:$CI_BUILD_REF_NAME
   script:
     - py.test -s -rxs -v

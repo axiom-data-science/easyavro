@@ -1,5 +1,5 @@
 {
-    "name": "beaker.testing",
+    "name": "easyavro.testing",
     "type": "record",
     "doc": "Beaker testing schema",
     "fields": [

@@ -18,12 +18,12 @@ schema.ArraySchema.__hash__ = hash_func
 schema.FixedSchema.__hash__ = hash_func
 schema.MapSchema.__hash__ = hash_func
 
-L = logging.getLogger('beaker')
+L = logging.getLogger('easyavro')
 L.propagate = False
 L.addHandler(logging.NullHandler())
 
 
-class BeakerProducer(AvroProducer):
+class EasyAvroProducer(AvroProducer):
 
     def __init__(self,
                  schema_registry_url: str,

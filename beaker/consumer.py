@@ -7,12 +7,12 @@ from confluent_kafka import KafkaError
 from confluent_kafka.avro import AvroConsumer
 from confluent_kafka.avro.serializer import SerializerError
 
-L = logging.getLogger('beaker')
+L = logging.getLogger('easyavro')
 L.propagate = False
 L.addHandler(logging.NullHandler())
 
 
-class BeakerConsumer(AvroConsumer):
+class EasyAvroConsumer(AvroConsumer):
 
     def __init__(self,
                  schema_registry_url: str,

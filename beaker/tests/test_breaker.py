@@ -10,23 +10,23 @@ from unittest import TestCase
 
 from confluent_kafka.avro import CachedSchemaRegistryClient
 
-from beaker import BeakerConsumer, BeakerProducer, schema
+from easyavro import EasyAvroConsumer, EasyAvroProducer, schema
 
 import logging
-L = logging.getLogger('beaker')
+L = logging.getLogger('easyavro')
 L.propagate = False
 L.setLevel(logging.DEBUG)
 L.handlers = [logging.StreamHandler()]
 
 
-class TestBeaker(TestCase):
+class TestEasyAvro(TestCase):
 
     def setUp(self):
 
-        self.testhost = os.environ.get('BEAKER_TESTING_HOST', 'localhost')
+        self.testhost = os.environ.get('EASYAVRO_TESTING_HOST', 'localhost')
         c = CachedSchemaRegistryClient(url='http://{}:50002'.format(self.testhost))
 
-        self.topic = 'beaker-testing-topic'
+        self.topic = 'easyavro-testing-topic'
 
         rp = ap(dn(__file__))
         with open(opj(rp, 'key.avsc'), 'rt') as f:
@@ -40,7 +40,7 @@ class TestBeaker(TestCase):
     def test_messages(self):
 
         # Produce
-        bp = BeakerProducer(
+        bp = EasyAvroProducer(
             schema_registry_url='http://{}:50002'.format(self.testhost),
             kafka_brokers=['{}:50001'.format(self.testhost)],
             kafka_topic=self.topic
@@ -62,10 +62,10 @@ class TestBeaker(TestCase):
         bp.produce(records)
 
         # Consume
-        bc = BeakerConsumer(
+        bc = EasyAvroConsumer(
             schema_registry_url='http://{}:50002'.format(self.testhost),
             kafka_brokers=['{}:50001'.format(self.testhost)],
-            consumer_group='beaker.testing',
+            consumer_group='easyavro.testing',
             kafka_topic=self.topic,
             offset='earliest'
         )

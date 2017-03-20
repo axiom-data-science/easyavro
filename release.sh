@@ -6,12 +6,12 @@ if [ $# -eq 0 ]; then
 fi
 
 # Set version to release
-sed -i "s/^__version__ = .*/__version__ = \"$1\"/" beaker/__init__.py
+sed -i "s/^__version__ = .*/__version__ = \"$1\"/" easyavro/__init__.py
 sed -i "s/version: .*/version: \"$1\"/" conda-recipe/meta.yaml
 echo $1 > VERSION
 
 # Commit release
-git add beaker/__init__.py
+git add easyavro/__init__.py
 git add conda-recipe/meta.yaml
 git add VERSION
 git commit -m "Release $1"

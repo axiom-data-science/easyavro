@@ -1,5 +1,5 @@
 package:
-    name: beaker
+    name: easyavro
     version: "1.2.0"
 
 source:
@@ -18,12 +18,12 @@ requirements:
 
 test:
     imports:
-        - beaker
-        - beaker.consumer
-        - beaker.producer
-        - beaker.tests
+        - easyavro
+        - easyavro.consumer
+        - easyavro.producer
+        - easyavro.tests
 
 about:
-    home: https://github.com/axiom-data-science/beaker
+    home: https://github.com/axiom-data-science/easyavro
     license: MIT License
     summary: "A python helper for producing and consuming avro schema'd Kafka topics"

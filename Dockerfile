@@ -46,7 +46,7 @@ RUN conda install -y \
     conda clean -a -y
 
 # Copy packrat contents and install
-ENV CODE_HOME /beaker
+ENV CODE_HOME /easyavro
 WORKDIR $CODE_HOME
 COPY . $CODE_HOME
 
