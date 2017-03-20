@@ -1,4 +1,4 @@
-# EasyAvro  [![build status](http://git.axiom/axiom/easyavro/badges/master/build.svg)](http://git.axiom/axiom/easyavro/commits/master)
+# EasyAvro  [![Build Status](https://travis-ci.org/axiom-data-science/easyavro.svg?branch=master)](https://travis-ci.org/axiom-data-science/easyavro)
 
 A ~~lab assistant~~ python helper for producing and consuming `avro` schema'd Kafka topics. Simplicity and the ability to execute a function for each message consumed is the top priority. This is not designed for high throughput.
 
@@ -74,7 +74,7 @@ bp.produce(records)
 
 #### Consumer
 
-The defaults are sane. They will pull offsets from the broker and set the topic offset to `largest`. This will pull all new messagse that haven't been acknokeldged by a consumer with the same `consumer_group` (which translates to the librdkafka `group.id` setting).
+The defaults are sane. They will pull offsets from the broker and set the topic offset to `largest`. This will pull all new messages that haven't been acknowledged by a consumer with the same `consumer_group` (which translates to the `librdkafka` `group.id` setting).
 
 ```python
 from easyavro import EasyAvroConsumer
@@ -91,7 +91,7 @@ bc = EasyAvroConsumer(
 bc.consume(on_recieve=on_recieve)
 ```
 
-Or pass in your own [topic config](see https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) dict.
+Or pass in your own [topic config](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) dict.
 
 ```python
 from easyavro import EasyAvroConsumer
