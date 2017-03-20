@@ -41,7 +41,8 @@ install:
 
   # Install testing requirements
   # ------------------------------------
-  - conda install --file requirements.txt --file requirements-test.txt
+  - conda install --file requirements.txt
+  - conda install --file requirements-test.txt
   - conda list --export
 
 script:
