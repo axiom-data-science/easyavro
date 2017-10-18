@@ -11,7 +11,7 @@ services:
 
 before_install:
   - docker pull landoop/fast-data-dev
-  - docker run -d -e BROKER_PORT=50001 -e REGISTRY_PORT=50002 -e RUNTESTS=0 -e DISABLE=elastic,hbase -e DISABLE_JMX=1 -e RUNTESTS=0 -e FORWARDLOGS=0 -e SAMPLEDATA=0 --name easyavrotesting landoop/fast-data-dev
+  - docker run -d -p 50001:50001 -p 50002:50002 -e BROKER_PORT=50001 -e REGISTRY_PORT=50002 -e RUNTESTS=0 -e DISABLE=elastic,hbase -e DISABLE_JMX=1 -e RUNTESTS=0 -e FORWARDLOGS=0 -e SAMPLEDATA=0 --name easyavrotesting landoop/fast-data-dev
 
 install:
   # Install miniconda
