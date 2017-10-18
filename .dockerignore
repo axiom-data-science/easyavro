@@ -1,0 +1,10 @@
+**/__pycache__
+**/*.pyc
+.git
+Dockerfile
+.gitignore
+README.md
+.cache
+.anaconda
+.travis.yml
+release.sh

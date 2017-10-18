@@ -19,7 +19,8 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/oracle-jdk8-installer
 
 # Setup CONDA (https://hub.docker.com/r/continuumio/miniconda3/~/dockerfile/)
-ENV MINICONDA_VERSION 4.2.12
+ENV MINICONDA_VERSION latest
+ARG PYTHON_VERSION=3.6
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
     curl -k -o /miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-$MINICONDA_VERSION-Linux-x86_64.sh && \
     /bin/bash /miniconda.sh -b -p /opt/conda && \
@@ -33,7 +34,9 @@ RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
         --add channels conda-forge \
         --add channels axiom-data-science \
         && \
+    /opt/conda/bin/conda install python=$PYTHON_VERSION && \
     /opt/conda/bin/conda clean -a -y
+
 ENV PATH /opt/conda/bin:$PATH
 
 # Install python requirements

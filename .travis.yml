@@ -4,15 +4,15 @@ language: python
 
 python:
   - "3.5"
-  #- "3.6"
+  - "3.6"
 
 services:
   - docker
 
 before_install:
   - docker pull landoop/fast-data-dev
-  - docker run -d -e BROKER_PORT=50001 -e REGISTRY_PORT=50002 -e RUNTESTS=0 -e DISABLE=elastic,hbase --name easyavrotesting landoop/fast-data-dev
-  - docker build -t easyavro .
+  - docker run -d -e BROKER_PORT=50001 -e REGISTRY_PORT=50002 -e RUNTESTS=0 -e DISABLE=elastic,hbase -e DISABLE_JMX=1 -e RUNTESTS=0 -e FORWARDLOGS=0 -e SAMPLEDATA=0 --name easyavrotesting landoop/fast-data-dev
+  - docker --build-arg PYTHON_VERSION=$TRAVIS_PYTHON_VERSION -t easyavro .
 
 install:
   # Install miniconda
