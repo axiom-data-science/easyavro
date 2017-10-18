@@ -142,10 +142,18 @@ There are only integration tests.
 
 ```
 docker run -d --net=host \
+        -e ZK_PORT=50000 \
         -e BROKER_PORT=50001 \
         -e REGISTRY_PORT=50002 \
+        -e REST_PORT=50003 \
+        -e CONNECT_PORT=50004 \
+        -e WEB_PORT=50005 \
         -e RUNTESTS=0 \
         -e DISABLE=elastic,hbase \
+        -e DISABLE_JMX=1 \
+        -e RUNTESTS=0 \
+        -e FORWARDLOGS=0 \
+        -e SAMPLEDATA=0 \
         --name easyavro-testing \
       landoop/fast-data-dev
 ```
@@ -154,7 +162,7 @@ docker run -d --net=host \
 
 ```
 docker build -t easyavro .
-docker run easyavro
+docker run --net="host" easyavro
 ```
 
 #### No Docker
