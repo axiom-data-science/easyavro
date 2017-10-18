@@ -1,8 +1,6 @@
 # EasyAvro  [![Build Status](https://travis-ci.org/axiom-data-science/easyavro.svg?branch=master)](https://travis-ci.org/axiom-data-science/easyavro)
 
-A ~~lab assistant~~ python helper for producing and consuming `avro` schema'd Kafka topics. Simplicity and the ability to execute a function for each message consumed is the top priority. This is not designed for high throughput.
-
-![EasyAvro](https://upload.wikimedia.org/wikipedia/en/5/59/Beaker_%28Muppet%29.jpg)
+A python helper for producing and consuming `avro` schema'd Kafka topics. Simplicity and the ability to execute a function for each message consumed is the top priority. This is not designed for high throughput.
 
 
 ## Installation

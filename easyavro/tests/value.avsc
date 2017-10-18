@@ -1,7 +1,7 @@
 {
     "name": "easyavro.testing",
     "type": "record",
-    "doc": "Beaker testing schema",
+    "doc": "EasyAvro testing schema",
     "fields": [
         {
             "name": "uuid",
