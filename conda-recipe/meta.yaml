@@ -1,33 +1,33 @@
 package:
-    name: easyavro
-    version: "2.1.0"
+  name: easyavro
+  version: "2.1.0"
 
 source:
-    path: ../
+  path: ../
 
 build:
-    number: 0
-    script: python setup.py install --single-version-externally-managed --record=record.txt
+  number: 1
+  noarch: python
+  script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
-    build:
-        - python
-        - setuptools
-    run:
-        - python-confluent-kafka >=0.9.4
-        - avro
-        - python-avro
-        - requests
-
+  build:
+    - python
+    - pip
+  run:
+    - python-confluent-kafka >=0.9.4
+    - avro
+    - python-avro
+    - requests
 
 test:
-    imports:
-        - easyavro
-        - easyavro.consumer
-        - easyavro.producer
-        - easyavro.tests
+  imports:
+    - easyavro
+    - easyavro.consumer
+    - easyavro.producer
+    - easyavro.tests
 
 about:
-    home: https://github.com/axiom-data-science/easyavro
-    license: MIT License
-    summary: "A python helper for producing and consuming avro schema'd Kafka topics"
+  home: https://github.com/axiom-data-science/easyavro
+  license: MIT License
+  summary: "A python helper for producing and consuming avro schema'd Kafka topics"

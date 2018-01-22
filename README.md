@@ -6,10 +6,8 @@ A python helper for producing and consuming `avro` schema'd Kafka topics. Simpli
 ## Installation
 
 ```bash
-conda install -c axiom-data-science EasyAvro
+conda install -c axiom-data-science easyavro
 ```
-
-There is py PyPi package. I know, I know. Feel free to submit a PR to integrate it into Travis.
 
 
 ## Usage
