@@ -1,4 +1,0 @@
-python-confluent-kafka>=0.9.4
-avro
-python-avro
-requests
