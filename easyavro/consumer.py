@@ -1,7 +1,10 @@
 #!python
 # coding=utf-8
+import time
 import logging
+import threading
 from typing import List, Callable
+from datetime import datetime, timedelta
 
 from confluent_kafka import KafkaError
 from confluent_kafka.avro import AvroConsumer
@@ -42,13 +45,28 @@ class EasyAvroConsumer(AvroConsumer):
 
     def consume(self,
                 on_recieve: Callable[[str, str], None],
+                on_recieve_timeout: int = None,
                 timeout: int = None,
-                loop: bool = True) -> None:
+                loop: bool = True,
+                initial_wait: int = None,
+                cleanup_every: int = 1000
+                ) -> None:
 
         if on_recieve is None:
             def on_recieve(k, v):
                 L.info("Recieved message:\nKey: {}\nValue: {}".format(k, v))
 
+        if initial_wait is not None:
+            initial_wait = int(initial_wait)
+            loops = 0
+            started = datetime.now()
+            start_delta = timedelta(seconds=initial_wait)
+            while (datetime.now() - started) < start_delta:
+                L.info("Starting in {} seconds".format(initial_wait - loops))
+                time.sleep(1)
+                loops += 1
+
+        callback_threads = []
         self.subscribe([self.kafka_topic])
         L.info("Starting consumer...")
         try:
@@ -65,12 +83,39 @@ class EasyAvroConsumer(AvroConsumer):
                                 break
                         else:
                             L.error(msg.error())
-                    # Call the function we passed in
-                    on_recieve(msg.key(), msg.value())
+                    else:
+                        # Call the function we passed in if we consumed a valid message
+                        t = threading.Thread(
+                            name='EasyAvro-on_recieve',
+                            target=on_recieve,
+                            args=(msg.key(), msg.value())
+                        )
+                        t.start()
+                        callback_threads.append(t)
                 except SerializerError as e:
                     L.warning('Message deserialization failed for "{}: {}"'.format(msg, e))
+                finally:
+                    # Periodically clean up threads to prevent the list of callback_threads
+                    # from becoming absolutely huge on long running Consumers
+                    if len(callback_threads) >= cleanup_every:
+                        for x in callback_threads:
+                            x.join(0)
+                        callback_threads = [
+                            x for x in callback_threads if x.is_alive()
+                        ]
+                        cleaned = cleanup_every - len(callback_threads)
+                        L.info('Cleaned up {} completed threads'.format(cleaned))
+
         except KeyboardInterrupt:
             L.info("Aborted via keyboard")
+        finally:
+            L.info("Waiting for on_recieve callbacks to finish...")
+            # Block for `on_recieve_timeout` for each thread that isn't finished
+            [ ct.join(timeout=on_recieve_timeout) for ct in callback_threads ]
+            # Now see if any threads are still alive (didn't exit after `on_recieve_timeout`)
+            alive_threads = [ at for at in callback_threads if at.is_alive() ]
+            for at in alive_threads:
+                L.warning('{0.name}-{0.ident} never exited and is still running'.format(at))
 
         L.debug("Closing consumer...")
         self.close()
