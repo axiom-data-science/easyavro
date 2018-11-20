@@ -30,7 +30,8 @@ class EasyAvroProducer(AvroProducer):
                  kafka_brokers: List[str],
                  kafka_topic: str,
                  value_schema: schema.Schema = None,
-                 key_schema: schema.Schema = None) -> None:
+                 key_schema: schema.Schema = None,
+                 debug: bool = False) -> None:
 
         self.kafka_topic = kafka_topic
         self._client = CachedSchemaRegistryClient(
@@ -51,14 +52,16 @@ class EasyAvroProducer(AvroProducer):
             if key_schema is None:
                 raise ValueError('Schema "{}" not found in registry'.format(ks_name))
 
-        super().__init__(
-            {
+        conf = {
                 'bootstrap.servers': ','.join(kafka_brokers),
                 'schema.registry.url': schema_registry_url,
                 'client.id': self.__class__.__name__,
-                'api.version.request': 'true',
-                'debug': 'msg',
-            },
+                'api.version.request': 'true'
+            }
+        if debug:
+            conf['debug'] = 'msg'
+        super().__init__(
+            conf,
             default_value_schema=value_schema,
             default_key_schema=key_schema
         )
