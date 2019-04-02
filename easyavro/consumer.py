@@ -23,7 +23,8 @@ class EasyAvroConsumer(AvroConsumer):
                  consumer_group: str,
                  kafka_topic: str,
                  topic_config: dict = None,
-                 offset: str = None) -> None:
+                 offset: str = None,
+                 kafka_conf: dict = None) -> None:
 
         topic_config = topic_config or {}
         self.kafka_topic = kafka_topic
@@ -32,19 +33,23 @@ class EasyAvroConsumer(AvroConsumer):
         if offset is not None and 'auto.offset.reset' not in topic_config:
             topic_config['auto.offset.reset'] = offset
 
+        conf = {
+            'bootstrap.servers': ','.join(kafka_brokers),
+            'schema.registry.url': schema_registry_url,
+            'client.id': self.__class__.__name__,
+            'group.id': consumer_group,
+            'api.version.request': 'true',
+            'default.topic.config': topic_config
+        }
+
+        kafka_conf = kafka_conf or {}
+
         super().__init__(
-            {
-                'bootstrap.servers': ','.join(kafka_brokers),
-                'schema.registry.url': schema_registry_url,
-                'client.id': self.__class__.__name__,
-                'group.id': consumer_group,
-                'api.version.request': 'true',
-                'default.topic.config': topic_config
-            }
+            {**conf, **kafka_conf}
         )
 
     def consume(self,
-                on_recieve: Callable[[str, str], None],
+                on_recieve: Callable[[str, str], None] = None,
                 on_recieve_timeout: int = None,
                 timeout: int = None,
                 loop: bool = True,

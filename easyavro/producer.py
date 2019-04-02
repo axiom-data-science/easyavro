@@ -30,7 +30,10 @@ class EasyAvroProducer(AvroProducer):
                  kafka_brokers: List[str],
                  kafka_topic: str,
                  value_schema: schema.Schema = None,
-                 key_schema: schema.Schema = None) -> None:
+                 key_schema: schema.Schema = None,
+                 debug: bool = False,
+                 kafka_conf: dict = None,
+                 py_conf: dict = None) -> None:
 
         self.kafka_topic = kafka_topic
         self._client = CachedSchemaRegistryClient(
@@ -51,16 +54,24 @@ class EasyAvroProducer(AvroProducer):
             if key_schema is None:
                 raise ValueError('Schema "{}" not found in registry'.format(ks_name))
 
+        conf = {
+            'bootstrap.servers': ','.join(kafka_brokers),
+            'schema.registry.url': schema_registry_url,
+            'client.id': self.__class__.__name__,
+            'api.version.request': 'true',
+        }
+
+        if debug is True:
+            conf['debug'] = 'msg'
+
+        kafka_conf = kafka_conf or {}
+        py_conf = py_conf or {}
+
         super().__init__(
-            {
-                'bootstrap.servers': ','.join(kafka_brokers),
-                'schema.registry.url': schema_registry_url,
-                'client.id': self.__class__.__name__,
-                'api.version.request': 'true',
-                'debug': 'msg',
-            },
+            {**conf, **kafka_conf},
             default_value_schema=value_schema,
-            default_key_schema=key_schema
+            default_key_schema=key_schema,
+            **py_conf
         )
 
     def produce(self, records: List[Tuple]) -> None:

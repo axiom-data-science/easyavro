@@ -76,20 +76,38 @@ records = [
 bp.produce(records)
 ```
 
+The initialization parameter `kafka_conf` can be passed to directly control the parameters passed to the librdkafka C library. These take precedence over all other parameters. See the documentation for the `config` parameter to [`AvroProducer`](https://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.avro.AvroProducer) and the [list of librdkafka properties](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#global-configuration-properties).
+
+```python
+bp = EasyAvroProducer(
+    schema_registry_url='http://localhost:4002',
+    kafka_brokers=['localhost:4001'],
+    kafka_topic='my-topic',
+    kafka_conf={
+        'debug': 'msg',
+        'api.version.request': 'false',
+        'queue.buffering.max.messages': 50000
+    }
+)
+```
+
+
 
 #### Consumer
 
 The defaults are sane. They will pull offsets from the broker and set the topic offset to `largest`. This will pull all new messages that haven't been acknowledged by a consumer with the same `consumer_group` (which translates to the `librdkafka` `group.id` setting).
 
+If you need to override any kafka level parameters, you may use the the `kafka_conf` (`dict`) initialization parameter on `Consumer`. It will override any of the defaults the `Consumer` uses. See the documentation for the `config` parameter to [`AvroConsumer`](https://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.avro.AvroConsumer) and the [list of librdkafka properties](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#global-configuration-properties).
 
-##### Parameters
 
-* `on_recieve` (`Callable[[str, str], None]`) - Function that is executed (in a new thread) for each retrieved message.
-* `on_recieve_timeout` (`int`) - Seconds the `Consumer` will wait for the calls to `on_recieve` to exit before moving on. By default it will wait forever. You should set this to a reasonable maximum number seconds your `on_recieve` callback will take to prevent dead-lock when the `Consumer` is exiting and trying to cleanup its spawned threads.
-* `timeout` (`int`) - The `timeout` parameter to the `poll` function in `confluent-kafka`. Controls how long `poll` will block while waiting for messages.
-* `loop` (`bool`) - If the `Consumer` will keep looping for message or break after retrieving the first chunk message. This is useful when testing.
-* `initial_wait` (`int`)- Seconds the Consumer should wait before starting to consume. This is useful when testing.
-* `cleanup_every` (`int`) - Try to cleanup spawned thread after this many messages.
+##### Parameters for `consume` function
+
+*  `on_recieve` (`Callable[[str, str], None]`) - Function that is executed (in a new thread) for each retrieved message.
+*  `on_recieve_timeout` (`int`) - Seconds the `Consumer` will wait for the calls to `on_recieve` to exit before moving on. By default it will wait forever. You should set this to a reasonable maximum number seconds your `on_recieve` callback will take to prevent dead-lock when the `Consumer` is exiting and trying to cleanup its spawned threads.
+*  `timeout` (`int`) - The `timeout` parameter to the `poll` function in `confluent-kafka`. Controls how long `poll` will block while waiting for messages.
+*  `loop` (`bool`) - If the `Consumer` will keep looping for message or break after retrieving the first chunk message. This is useful when testing.
+*  `initial_wait` (`int`)- Seconds the Consumer should wait before starting to consume. This is useful when testing.
+*  `cleanup_every` (`int`) - Try to cleanup spawned thread after this many messages.
 
 ```python
 from easyavro import EasyAvroConsumer
