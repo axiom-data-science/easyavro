@@ -2,6 +2,7 @@
 # coding=utf-8
 import logging
 from typing import List, Tuple
+from itertools import zip_longest, filterfalse
 
 from confluent_kafka.avro import AvroProducer, CachedSchemaRegistryClient
 
@@ -23,6 +24,19 @@ L.propagate = False
 L.addHandler(logging.NullHandler())
 
 
+def grouper(iterable, batch_size, fillend=False, fillvalue=None):
+    # Modified from https://docs.python.org/3/library/itertools.html#recipes
+    # to remove None values
+    # grouper('ABCDEFG', 3, fillend=True, fillvalue='x') --> ABC DEF Gxx"
+    # grouper('ABCDEFG', 3, fillend=False) --> ABC DEF G"
+    "Collect data into fixed-length chunks or blocks"
+    args = [iter(iterable)] * batch_size
+    if fillend is False:
+        return ( tuple(filterfalse(lambda x: x is None, g)) for g in zip_longest(*args, fillvalue=None) )
+    else:
+        return zip_longest(*args, fillvalue=fillvalue)
+
+
 class EasyAvroProducer(AvroProducer):
 
     def __init__(self,
@@ -30,7 +44,10 @@ class EasyAvroProducer(AvroProducer):
                  kafka_brokers: List[str],
                  kafka_topic: str,
                  value_schema: schema.Schema = None,
-                 key_schema: schema.Schema = None) -> None:
+                 key_schema: schema.Schema = None,
+                 debug: bool = False,
+                 kafka_conf: dict = None,
+                 py_conf: dict = None) -> None:
 
         self.kafka_topic = kafka_topic
         self._client = CachedSchemaRegistryClient(
@@ -51,27 +68,43 @@ class EasyAvroProducer(AvroProducer):
             if key_schema is None:
                 raise ValueError('Schema "{}" not found in registry'.format(ks_name))
 
+        conf = {
+            'bootstrap.servers': ','.join(kafka_brokers),
+            'schema.registry.url': schema_registry_url,
+            'client.id': self.__class__.__name__,
+            'api.version.request': 'true',
+        }
+
+        if debug is True:
+            conf['debug'] = 'msg'
+
+        kafka_conf = kafka_conf or {}
+        py_conf = py_conf or {}
+
         super().__init__(
-            {
-                'bootstrap.servers': ','.join(kafka_brokers),
-                'schema.registry.url': schema_registry_url,
-                'client.id': self.__class__.__name__,
-                'api.version.request': 'true',
-                'debug': 'msg',
-            },
+            {**conf, **kafka_conf},
             default_value_schema=value_schema,
-            default_key_schema=key_schema
+            default_key_schema=key_schema,
+            **py_conf
         )
 
-    def produce(self, records: List[Tuple]) -> None:
-        for i, r in enumerate(records):
-            super().produce(
-                topic=self.kafka_topic,
-                key=r[0],
-                value=r[1]
-            )
-            L.info("{}/{} messages".format(i + 1, len(records)))
+    def produce(self, records: List[Tuple], batch=None) -> None:
 
-        L.debug("Flushing producer...")
+        batch = batch or len(records)
+
+        for g, group in enumerate(grouper(records, batch)):
+
+            for i, r in enumerate(group):
+                super().produce(
+                    topic=self.kafka_topic,
+                    key=r[0],
+                    value=r[1]
+                )
+                L.info("{}/{} messages".format(i + 1, len(records)))
+
+            L.debug("Flushing...")
+            self.flush()
+            L.debug("Batch {} produced".format(g))
+
         self.flush()
         L.info("Done producing")

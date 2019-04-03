@@ -161,3 +161,41 @@ class TestEasyAvro(TestCase):
             cleanup_every=2
         )
         assert self.recieved[len(records) * -1:] == records
+
+    def test_overflow_with_custom_config(self):
+        self.bp = EasyAvroProducer(
+            schema_registry_url='http://{}:4002'.format(self.testhost),
+            kafka_brokers=['{}:4001'.format(self.testhost)],
+            kafka_topic=self.topic,
+            kafka_conf={
+                'queue.buffering.max.messages': 1
+            }
+        )
+
+        m1 = str(uuid.uuid4())
+        records = [
+            ('ADD',     { 'uuid': m1, 'properties': {'name': 'TEST 1' }}),
+            ('UPDATE',  { 'uuid': m1, 'properties': {'name': 'TEST 1' }}),
+        ]
+
+        with self.assertRaises(BufferError):
+            self.bp.produce(records)
+
+    def test_dont_overflow_with_batch_specified(self):
+        self.bp = EasyAvroProducer(
+            schema_registry_url='http://{}:4002'.format(self.testhost),
+            kafka_brokers=['{}:4001'.format(self.testhost)],
+            kafka_topic=self.topic,
+            kafka_conf={
+                'queue.buffering.max.messages': 1
+            }
+        )
+
+        m1 = str(uuid.uuid4())
+        records = [
+            ('ADD',     { 'uuid': m1, 'properties': {'name': 'TEST 1' }}),
+            ('UPDATE',  { 'uuid': m1, 'properties': {'name': 'TEST 1' }}),
+        ]
+
+        # This should not error now
+        self.bp.produce(records, batch=1)
