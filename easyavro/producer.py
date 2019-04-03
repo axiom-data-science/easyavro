@@ -2,6 +2,7 @@
 # coding=utf-8
 import logging
 from typing import List, Tuple
+from itertools import zip_longest, filterfalse
 
 from confluent_kafka.avro import AvroProducer, CachedSchemaRegistryClient
 
@@ -21,6 +22,19 @@ schema.MapSchema.__hash__ = hash_func
 L = logging.getLogger('easyavro')
 L.propagate = False
 L.addHandler(logging.NullHandler())
+
+
+def grouper(iterable, batch_size, fillend=False, fillvalue=None):
+    # Modified from https://docs.python.org/3/library/itertools.html#recipes
+    # to remove None values
+    # grouper('ABCDEFG', 3, fillend=True, fillvalue='x') --> ABC DEF Gxx"
+    # grouper('ABCDEFG', 3, fillend=False) --> ABC DEF G"
+    "Collect data into fixed-length chunks or blocks"
+    args = [iter(iterable)] * batch_size
+    if fillend is False:
+        return ( tuple(filterfalse(lambda x: x is None, g)) for g in zip_longest(*args, fillvalue=None) )
+    else:
+        return zip_longest(*args, fillvalue=fillvalue)
 
 
 class EasyAvroProducer(AvroProducer):
@@ -74,15 +88,23 @@ class EasyAvroProducer(AvroProducer):
             **py_conf
         )
 
-    def produce(self, records: List[Tuple]) -> None:
-        for i, r in enumerate(records):
-            super().produce(
-                topic=self.kafka_topic,
-                key=r[0],
-                value=r[1]
-            )
-            L.info("{}/{} messages".format(i + 1, len(records)))
+    def produce(self, records: List[Tuple], batch=None) -> None:
 
-        L.debug("Flushing producer...")
+        batch = batch or len(records)
+
+        for g, group in enumerate(grouper(records, batch)):
+
+            for i, r in enumerate(group):
+                super().produce(
+                    topic=self.kafka_topic,
+                    key=r[0],
+                    value=r[1]
+                )
+                L.info("{}/{} messages".format(i + 1, len(records)))
+
+            L.debug("Flushing...")
+            self.flush()
+            L.debug("Batch {} produced".format(g))
+
         self.flush()
         L.info("Done producing")

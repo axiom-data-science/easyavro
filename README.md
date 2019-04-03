@@ -91,6 +91,33 @@ bp = EasyAvroProducer(
 )
 ```
 
+In addition to a list of records, the `produce` method also accepts a `batch` parameter which
+will flush the producer after that number of records. This is useful to avoid `BufferError: Local: Queue full` errors if you are producing more messages at once than the librdkafka option `queue.buffering.max.messages`.
+
+
+```python
+bp = EasyAvroProducer(
+    schema_registry_url='http://localhost:4002',
+    kafka_brokers=['localhost:4001'],
+    kafka_topic='my-topic',
+    kafka_conf={
+        'queue.buffering.max.messages': 1
+    }
+)
+
+records = [
+    (None, 'foo'),
+    (None, 'bar'),
+]
+
+# This will raise an error because the number of records is
+# larger than the `queue.buffering.max.messages` config option.
+bp.produce(records)
+
+# This will NOT raise an error because the producer is flushed
+# every `batch` messages.
+bp.produce(records, batch=1)
+```
 
 
 #### Consumer
