@@ -20,14 +20,14 @@ L.setLevel(logging.DEBUG)
 L.handlers = [logging.StreamHandler()]
 
 
-class TestEasyAvro(TestCase):
+class TestAvro(TestCase):
 
     def setUp(self):
 
         self.testhost = os.environ.get('EASYAVRO_TESTING_HOST', 'localhost')
         c = CachedSchemaRegistryClient(url='http://{}:4002'.format(self.testhost))
 
-        self.topic = 'easyavro-testing-topic'
+        self.topic = 'easyavro-testing-topic-avro'
 
         rp = ap(dn(__file__))
         with open(opj(rp, 'key.avsc'), 'rt') as f:
