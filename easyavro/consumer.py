@@ -6,7 +6,7 @@ import threading
 from typing import List, Callable
 from datetime import datetime, timedelta
 
-from confluent_kafka import KafkaError
+from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.avro import AvroConsumer
 from confluent_kafka.avro.serializer import SerializerError
 
@@ -15,38 +15,7 @@ L.propagate = False
 L.addHandler(logging.NullHandler())
 
 
-class EasyAvroConsumer(AvroConsumer):
-
-    def __init__(self,
-                 schema_registry_url: str,
-                 kafka_brokers: List[str],
-                 consumer_group: str,
-                 kafka_topic: str,
-                 topic_config: dict = None,
-                 offset: str = None,
-                 kafka_conf: dict = None) -> None:
-
-        topic_config = topic_config or {}
-        self.kafka_topic = kafka_topic
-
-        # A simplier way to set the topic offset
-        if offset is not None and 'auto.offset.reset' not in topic_config:
-            topic_config['auto.offset.reset'] = offset
-
-        conf = {
-            'bootstrap.servers': ','.join(kafka_brokers),
-            'schema.registry.url': schema_registry_url,
-            'client.id': self.__class__.__name__,
-            'group.id': consumer_group,
-            'api.version.request': 'true',
-            'default.topic.config': topic_config
-        }
-
-        kafka_conf = kafka_conf or {}
-
-        super().__init__(
-            {**conf, **kafka_conf}
-        )
+class BaseConsumer:
 
     def consume(self,
                 on_recieve: Callable[[str, str], None] = None,
@@ -125,3 +94,69 @@ class EasyAvroConsumer(AvroConsumer):
         L.debug("Closing consumer...")
         self.close()
         L.info("Done consuming")
+
+
+class EasyConsumer(BaseConsumer, Consumer):
+
+    def __init__(self,
+                 kafka_brokers: List[str],
+                 consumer_group: str,
+                 kafka_topic: str,
+                 topic_config: dict = None,
+                 offset: str = None,
+                 kafka_conf: dict = None) -> None:
+
+        topic_config = topic_config or {}
+        self.kafka_topic = kafka_topic
+
+        # A simplier way to set the topic offset
+        if offset is not None and 'auto.offset.reset' not in topic_config:
+            topic_config['auto.offset.reset'] = offset
+
+        conf = {
+            'bootstrap.servers': ','.join(kafka_brokers),
+            'client.id': self.__class__.__name__,
+            'group.id': consumer_group,
+            'api.version.request': 'true',
+            'default.topic.config': topic_config
+        }
+
+        kafka_conf = kafka_conf or {}
+
+        super().__init__(
+            {**conf, **kafka_conf}
+        )
+
+
+class EasyAvroConsumer(BaseConsumer, AvroConsumer):
+
+    def __init__(self,
+                 schema_registry_url: str,
+                 kafka_brokers: List[str],
+                 consumer_group: str,
+                 kafka_topic: str,
+                 topic_config: dict = None,
+                 offset: str = None,
+                 kafka_conf: dict = None) -> None:
+
+        topic_config = topic_config or {}
+        self.kafka_topic = kafka_topic
+
+        # A simplier way to set the topic offset
+        if offset is not None and 'auto.offset.reset' not in topic_config:
+            topic_config['auto.offset.reset'] = offset
+
+        conf = {
+            'bootstrap.servers': ','.join(kafka_brokers),
+            'schema.registry.url': schema_registry_url,
+            'client.id': self.__class__.__name__,
+            'group.id': consumer_group,
+            'api.version.request': 'true',
+            'default.topic.config': topic_config
+        }
+
+        kafka_conf = kafka_conf or {}
+
+        super().__init__(
+            {**conf, **kafka_conf}
+        )

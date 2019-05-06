@@ -4,14 +4,18 @@ import logging
 from typing import List, Tuple
 from itertools import zip_longest, filterfalse
 
+from avro import schema
+from confluent_kafka import Producer
 from confluent_kafka.avro import AvroProducer, CachedSchemaRegistryClient
+
 
 # Monkey patch to get hashable avro schemas
 # https://issues.apache.org/jira/browse/AVRO-1737
 # https://github.com/confluentinc/confluent-kafka-python/issues/122
-from avro import schema
 def hash_func(self):
     return hash(str(self))
+
+
 schema.EnumSchema.__hash__ = hash_func
 schema.RecordSchema.__hash__ = hash_func
 schema.PrimitiveSchema.__hash__ = hash_func
@@ -37,7 +41,60 @@ def grouper(iterable, batch_size, fillend=False, fillvalue=None):
         return zip_longest(*args, fillvalue=fillvalue)
 
 
-class EasyAvroProducer(AvroProducer):
+class BaseProducer:
+
+    def produce(self, records: List[Tuple], batch=None) -> None:
+
+        batch = batch or len(records)
+
+        for g, group in enumerate(grouper(records, batch)):
+
+            for i, r in enumerate(group):
+                super().produce(
+                    topic=self.kafka_topic,
+                    key=r[0],
+                    value=r[1]
+                )
+                L.info("{}/{} messages".format(i + 1, len(records)))
+
+            L.debug("Flushing...")
+            self.flush()
+            L.debug("Batch {} produced".format(g))
+
+        self.flush()
+        L.info("Done producing")
+
+
+class EasyProducer(BaseProducer, Producer):
+
+    def __init__(self,
+                 kafka_brokers: List[str],
+                 kafka_topic: str,
+                 debug: bool = False,
+                 kafka_conf: dict = None,
+                 py_conf: dict = None) -> None:
+
+        self.kafka_topic = kafka_topic
+
+        conf = {
+            'bootstrap.servers': ','.join(kafka_brokers),
+            'client.id': self.__class__.__name__,
+            'api.version.request': 'true',
+        }
+
+        if debug is True:
+            conf['debug'] = 'msg'
+
+        kafka_conf = kafka_conf or {}
+        py_conf = py_conf or {}
+
+        super().__init__(
+            {**conf, **kafka_conf},
+            **py_conf
+        )
+
+
+class EasyAvroProducer(BaseProducer, AvroProducer):
 
     def __init__(self,
                  schema_registry_url: str,
@@ -87,24 +144,3 @@ class EasyAvroProducer(AvroProducer):
             default_key_schema=key_schema,
             **py_conf
         )
-
-    def produce(self, records: List[Tuple], batch=None) -> None:
-
-        batch = batch or len(records)
-
-        for g, group in enumerate(grouper(records, batch)):
-
-            for i, r in enumerate(group):
-                super().produce(
-                    topic=self.kafka_topic,
-                    key=r[0],
-                    value=r[1]
-                )
-                L.info("{}/{} messages".format(i + 1, len(records)))
-
-            L.debug("Flushing...")
-            self.flush()
-            L.debug("Batch {} produced".format(g))
-
-        self.flush()
-        L.info("Done producing")
