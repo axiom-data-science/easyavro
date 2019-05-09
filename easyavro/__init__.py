@@ -3,7 +3,7 @@
 from .consumer import EasyAvroConsumer, EasyConsumer
 from .producer import EasyAvroProducer, EasyProducer, schema
 
-__version__ = "2.4.0"
+__version__ = "2.5.0"
 
 
 __all__ = [
