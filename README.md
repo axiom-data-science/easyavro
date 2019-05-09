@@ -54,6 +54,12 @@ bp.produce(records)
 # This will NOT raise an error because the producer is flushed
 # every `batch` messages.
 bp.produce(records, batch=1)
+
+# Supply a `flush_timeout` parameter to avoid deadlocking the C library
+# when brokers are down. Messages that are not flushed after the timeout
+# are kept in an internal queue and are processed at the next flush.
+# Default is 60 seconds.
+bp.produce(records, batch=1, flush_timeout=10)
 ```
 
 #### EasyProducer
@@ -297,7 +303,7 @@ docker run -d --net=host \
         -e FORWARDLOGS=0 \
         -e SAMPLEDATA=0 \
         --name easyavro-testing \
-      landoop/fast-data-dev
+      landoop/fast-data-dev:1.0.1
 ```
 
 #### Docker

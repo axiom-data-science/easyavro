@@ -41,9 +41,17 @@ def grouper(iterable, batch_size, fillend=False, fillvalue=None):
         return zip_longest(*args, fillvalue=fillvalue)
 
 
+def on_delivery(err, msg):
+    if err:
+        L.error(err)
+    else:
+        L.debug('Delivered to {} at offset {}'.format(msg.topic(), msg.offset()))
+
+
 class BaseProducer:
 
-    def produce(self, records: List[Tuple], batch=None) -> None:
+
+    def produce(self, records: List[Tuple], batch=None, flush_timeout=60) -> None:
 
         batch = batch or len(records)
 
@@ -53,15 +61,17 @@ class BaseProducer:
                 super().produce(
                     topic=self.kafka_topic,
                     key=r[0],
-                    value=r[1]
+                    value=r[1],
+                    on_delivery=on_delivery
                 )
-                L.info("{}/{} messages".format(i + 1, len(records)))
+                L.debug("{}/{} messages queued".format(i + 1, len(records)))
 
             L.debug("Flushing...")
-            self.flush()
-            L.debug("Batch {} produced".format(g))
+            remaining = self.flush(timeout=flush_timeout)
+            sent = len(group) - remaining
+            L.info("Batch {} finished: {} sent, {} pending".format(g, sent, remaining))
 
-        self.flush()
+        self.flush(timeout=flush_timeout)
         L.info("Done producing")
 
 
