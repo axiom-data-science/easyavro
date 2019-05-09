@@ -297,7 +297,7 @@ docker run -d --net=host \
         -e FORWARDLOGS=0 \
         -e SAMPLEDATA=0 \
         --name easyavro-testing \
-      landoop/fast-data-dev
+      landoop/fast-data-dev:1.0.1
 ```
 
 #### Docker
