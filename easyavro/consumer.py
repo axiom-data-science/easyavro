@@ -67,7 +67,7 @@ class BaseConsumer:
                         t.start()
                         callback_threads.append(t)
                 except SerializerError as e:
-                    L.warning('Message deserialization failed for "{}: {}"'.format(msg, e))
+                    L.warning('Message deserialization failed: {}"'.format(e))
                 finally:
                     # Periodically clean up threads to prevent the list of callback_threads
                     # from becoming absolutely huge on long running Consumers
