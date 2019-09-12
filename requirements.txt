@@ -1,5 +1,5 @@
 avro
 msgpack-python
 python-avro
-python-confluent-kafka>=0.9.4
+python-confluent-kafka>=1.1.0,<2.0.0
 requests

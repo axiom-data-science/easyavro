@@ -117,9 +117,9 @@ class EasyAvroProducer(BaseProducer, AvroProducer):
                  py_conf: dict = None) -> None:
 
         self.kafka_topic = kafka_topic
-        self._client = CachedSchemaRegistryClient(
+        self._client = CachedSchemaRegistryClient(dict(
             url=schema_registry_url
-        )
+        ))
 
         # Value Schema
         if value_schema is None:

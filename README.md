@@ -194,7 +194,7 @@ bc = EasyConsumer(
 bc.consume(on_recieve=on_recieve)
 ```
 
-Or pass in your own [topic config](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) dict.
+Or pass in your own [kafka config](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) dict.
 
 ```python
 from easyavro import EasyConsumer
@@ -206,7 +206,10 @@ bc = EasyConsumer(
     kafka_brokers=['localhost:4001'],
     consumer_group='easyavro.testing',
     kafka_topic='my-topic',
-    topic_config={'enable.auto.commit': False, 'offset.store.method': 'file'}
+    kafka_conf={
+        'enable.auto.commit': False,
+        'offset.store.method': 'file'
+    }
 )
 bc.consume(on_recieve=on_recieve)
 ```

@@ -15,10 +15,11 @@ requirements:
     - python
     - pip
   run:
-    - python-confluent-kafka >=0.9.4
+    - python-confluent-kafka >=1.1.0,<2.0.0
     - avro
     - python-avro
     - requests
+    - msgpack-python
 
 test:
   imports:

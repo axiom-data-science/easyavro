@@ -106,22 +106,26 @@ class EasyConsumer(BaseConsumer, Consumer):
                  offset: str = None,
                  kafka_conf: dict = None) -> None:
 
+        kafka_conf = kafka_conf or {}
+
         topic_config = topic_config or {}
+        if topic_config:
+            L.warning("topic_config is deprecated. Put these info kafka_conf")
+            kafka_conf.update(topic_conf)
+
         self.kafka_topic = kafka_topic
 
         # A simplier way to set the topic offset
-        if offset is not None and 'auto.offset.reset' not in topic_config:
-            topic_config['auto.offset.reset'] = offset
+        if offset is not None and 'auto.offset.reset' not in kafka_conf:
+            kafka_conf['auto.offset.reset'] = offset
 
         conf = {
             'bootstrap.servers': ','.join(kafka_brokers),
             'client.id': self.__class__.__name__,
             'group.id': consumer_group,
             'api.version.request': 'true',
-            'default.topic.config': topic_config
+            'enable.partition.eof': True,
         }
-
-        kafka_conf = kafka_conf or {}
 
         super().__init__(
             {**conf, **kafka_conf}
@@ -139,12 +143,18 @@ class EasyAvroConsumer(BaseConsumer, AvroConsumer):
                  offset: str = None,
                  kafka_conf: dict = None) -> None:
 
+        kafka_conf = kafka_conf or {}
+
         topic_config = topic_config or {}
+        if topic_config:
+            L.warning("topic_config is deprecated. Put these info kafka_conf")
+            kafka_conf.update(topic_conf)
+
         self.kafka_topic = kafka_topic
 
         # A simplier way to set the topic offset
-        if offset is not None and 'auto.offset.reset' not in topic_config:
-            topic_config['auto.offset.reset'] = offset
+        if offset is not None and 'auto.offset.reset' not in kafka_conf:
+            kafka_conf['auto.offset.reset'] = offset
 
         conf = {
             'bootstrap.servers': ','.join(kafka_brokers),
@@ -152,10 +162,8 @@ class EasyAvroConsumer(BaseConsumer, AvroConsumer):
             'client.id': self.__class__.__name__,
             'group.id': consumer_group,
             'api.version.request': 'true',
-            'default.topic.config': topic_config
+            'enable.partition.eof': True,
         }
-
-        kafka_conf = kafka_conf or {}
 
         super().__init__(
             {**conf, **kafka_conf}
