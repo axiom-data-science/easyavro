@@ -173,8 +173,8 @@ If you need to override any kafka level parameters, you may use the the `kafka_c
 
 ##### Parameters for `consume` function
 
-*  `on_recieve` (`Callable[[str, str], None]`) - Function that is executed (in a new thread) for each retrieved message.
-*  `on_recieve_timeout` (`int`) - Seconds the `Consumer` will wait for the calls to `on_recieve` to exit before moving on. By default it will wait forever. You should set this to a reasonable maximum number seconds your `on_recieve` callback will take to prevent dead-lock when the `Consumer` is exiting and trying to cleanup its spawned threads.
+*  `on_receive` (`Callable[[str, str], None]`) - Function that is executed (in a new thread) for each retrieved message.
+*  `on_receive_timeout` (`int`) - Seconds the `Consumer` will wait for the calls to `on_receive` to exit before moving on. By default it will wait forever. You should set this to a reasonable maximum number seconds your `on_receive` callback will take to prevent dead-lock when the `Consumer` is exiting and trying to cleanup its spawned threads.
 *  `timeout` (`int`) - The `timeout` parameter to the `poll` function in `confluent-kafka`. Controls how long `poll` will block while waiting for messages.
 *  `loop` (`bool`) - If the `Consumer` will keep looping for message or break after retrieving the first chunk message. This is useful when testing.
 *  `initial_wait` (`int`)- Seconds the Consumer should wait before starting to consume. This is useful when testing.
@@ -183,7 +183,7 @@ If you need to override any kafka level parameters, you may use the the `kafka_c
 ```python
 from easyavro import EasyConsumer
 
-def on_recieve(key: str, value: str) -> None:
+def on_receive(key: str, value: str) -> None:
     print("Got Key:{}\nValue:{}\n".format(key, value))
 
 bc = EasyConsumer(
@@ -191,7 +191,7 @@ bc = EasyConsumer(
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_recieve=on_recieve)
+bc.consume(on_receive=on_receive)
 ```
 
 Or pass in your own [kafka config](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) dict.
@@ -199,7 +199,7 @@ Or pass in your own [kafka config](https://github.com/edenhill/librdkafka/blob/m
 ```python
 from easyavro import EasyConsumer
 
-def on_recieve(key: str, value: str) -> None:
+def on_receive(key: str, value: str) -> None:
     print("Got Key:{}\nValue:{}\n".format(key, value))
 
 bc = EasyConsumer(
@@ -211,7 +211,7 @@ bc = EasyConsumer(
         'offset.store.method': 'file'
     }
 )
-bc.consume(on_recieve=on_recieve)
+bc.consume(on_receive=on_receive)
 ```
 
 Or pass in a value to use for the `auto.offset.reset` [topic config](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) setting.
@@ -219,7 +219,7 @@ Or pass in a value to use for the `auto.offset.reset` [topic config](https://git
 ```python
 from easyavro import EasyConsumer
 
-def on_recieve(key: str, value: str) -> None:
+def on_receive(key: str, value: str) -> None:
     print("Got Key:{}\nValue:{}\n".format(key, value))
 
 bc = EasyConsumer(
@@ -228,7 +228,7 @@ bc = EasyConsumer(
     kafka_topic='my-topic',
     offset='earliest'
 )
-bc.consume(on_recieve=on_recieve)
+bc.consume(on_receive=on_receive)
 ```
 
 #### EasyConsumer
@@ -238,7 +238,7 @@ If you are not using a Confluent SchemaRegistry and want to handle the unpacking
 ```python
 from easyavro import EasyConsumer
 
-def on_recieve(key: str, value: str) -> None:
+def on_receive(key: str, value: str) -> None:
     print("Got Key:{}\nValue:{}\n".format(key, value))
 
 bc = EasyConsumer(
@@ -246,7 +246,7 @@ bc = EasyConsumer(
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_recieve=on_recieve)
+bc.consume(on_receive=on_receive)
 ```
 
 You can unpack data as needed in the callback function
@@ -255,7 +255,7 @@ You can unpack data as needed in the callback function
 import msgpack
 from easyavro import EasyConsumer
 
-def on_recieve(key: str, value: bytes) -> None:
+def on_receive(key: str, value: bytes) -> None:
     print("Got Key:{}\nValue:{}\n".format(key, msgpack.loads(value)))
 
 bc = EasyConsumer(
@@ -263,7 +263,7 @@ bc = EasyConsumer(
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_recieve=on_recieve)
+bc.consume(on_receive=on_receive)
 ```
 
 
@@ -274,7 +274,7 @@ If you are using a Confluent SchemaRegistry this helper exists to match your top
 ```python
 from easyavro import EasyAvroConsumer
 
-def on_recieve(key: str, value: str) -> None:
+def on_receive(key: str, value: str) -> None:
     print("Got Key:{}\nValue:{}\n".format(key, value))
 
 bc = EasyAvroConsumer(
@@ -282,7 +282,7 @@ bc = EasyAvroConsumer(
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_recieve=on_recieve)
+bc.consume(on_receive=on_receive)
 ```
 
 ## Testing

@@ -19,16 +19,26 @@ class BaseConsumer:
 
     def consume(self,
                 on_recieve: Callable[[str, str], None] = None,
+                on_receive: Callable[[str, str], None] = None,
                 on_recieve_timeout: int = None,
+                on_receive_timeout: int = None,
                 timeout: int = None,
                 loop: bool = True,
                 initial_wait: int = None,
                 cleanup_every: int = 1000
                 ) -> None:
 
-        if on_recieve is None:
-            def on_recieve(k, v):
-                L.info("Recieved message:\nKey: {}\nValue: {}".format(k, v))
+        if on_recieve is not None:
+            L.warning("Use `on_receive` (spelled correctly)")
+            on_receive = on_recieve
+
+        if on_recieve_timeout is not None:
+            L.warning("Use `on_receive_timeout` (spelled correctly)")
+            on_receive_timeout = on_recieve_timeout
+
+        if on_receive is None:
+            def on_receive(k, v):
+                L.info("Received message:\nKey: {}\nValue: {}".format(k, v))
 
         if initial_wait is not None:
             initial_wait = int(initial_wait)
@@ -60,8 +70,8 @@ class BaseConsumer:
                     else:
                         # Call the function we passed in if we consumed a valid message
                         t = threading.Thread(
-                            name='EasyAvro-on_recieve',
-                            target=on_recieve,
+                            name='EasyAvro-on_receive',
+                            target=on_receive,
                             args=(msg.key(), msg.value())
                         )
                         t.start()
@@ -83,10 +93,10 @@ class BaseConsumer:
         except KeyboardInterrupt:
             L.info("Aborted via keyboard")
         finally:
-            L.info("Waiting for on_recieve callbacks to finish...")
-            # Block for `on_recieve_timeout` for each thread that isn't finished
-            [ ct.join(timeout=on_recieve_timeout) for ct in callback_threads ]
-            # Now see if any threads are still alive (didn't exit after `on_recieve_timeout`)
+            L.info("Waiting for on_receive callbacks to finish...")
+            # Block for `on_receive_timeout` for each thread that isn't finished
+            [ ct.join(timeout=on_receive_timeout) for ct in callback_threads ]
+            # Now see if any threads are still alive (didn't exit after `on_receive_timeout`)
             alive_threads = [ at for at in callback_threads if at.is_alive() ]
             for at in alive_threads:
                 L.warning('{0.name}-{0.ident} never exited and is still running'.format(at))
@@ -111,7 +121,7 @@ class EasyConsumer(BaseConsumer, Consumer):
         topic_config = topic_config or {}
         if topic_config:
             L.warning("topic_config is deprecated. Put these info kafka_conf")
-            kafka_conf.update(topic_conf)
+            kafka_conf.update(topic_config)
 
         self.kafka_topic = kafka_topic
 
@@ -148,7 +158,7 @@ class EasyAvroConsumer(BaseConsumer, AvroConsumer):
         topic_config = topic_config or {}
         if topic_config:
             L.warning("topic_config is deprecated. Put these info kafka_conf")
-            kafka_conf.update(topic_conf)
+            kafka_conf.update(topic_config)
 
         self.kafka_topic = kafka_topic
 

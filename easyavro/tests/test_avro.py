@@ -54,11 +54,11 @@ class TestAvro(TestCase):
             offset='earliest'
         )
 
-        def on_recieve(key: str, value: str) -> None:
-            self.recieved.append((key, value))
-            L.info("Recieved message")
-        self.recieved = []
-        self.on_recieve = on_recieve
+        def on_receive(key: str, value: str) -> None:
+            self.received.append((key, value))
+            L.info("Received message")
+        self.received = []
+        self.on_receive = on_receive
 
     def tearDown(self):
         del self.bp
@@ -83,8 +83,8 @@ class TestAvro(TestCase):
         self.bp.produce(records)
 
         # Consume
-        self.bc.consume(on_recieve=self.on_recieve, timeout=1, loop=False)
-        assert self.recieved[len(records) * -1:] == records
+        self.bc.consume(on_receive=self.on_receive, timeout=1, loop=False)
+        assert self.received[len(records) * -1:] == records
 
     def test_initial_wait(self):
         # Produce
@@ -96,14 +96,14 @@ class TestAvro(TestCase):
 
         # Consume
         self.bc.consume(
-            on_recieve=self.on_recieve,
+            on_receive=self.on_receive,
             timeout=1,
             loop=False,
             initial_wait=5
         )
-        assert self.recieved[len(records) * -1:] == records
+        assert self.received[len(records) * -1:] == records
 
-    def test_on_recieve_timeout(self):
+    def test_on_receive_timeout(self):
         # Produce
         m1 = str(uuid.uuid4())
         records = [
@@ -119,23 +119,23 @@ class TestAvro(TestCase):
             kafka_topic=self.topic,
             offset='earliest'
         )
-        recieved = []
+        received = []
 
-        def on_recieve(key: str, value: str) -> None:
+        def on_receive(key: str, value: str) -> None:
             time.sleep(10)
             raise ValueError('hi')
-            L.info("Recieved message")
+            L.info("Received message")
 
         bc.consume(
-            on_recieve=on_recieve,
-            on_recieve_timeout=1,
+            on_receive=on_receive,
+            on_receive_timeout=1,
             timeout=1,
             loop=False,
         )
-        # Our callbacks take longer than the `on_recieve_timeout`
-        # so we should recieve nothing even though the callback
+        # Our callbacks take longer than the `on_receive_timeout`
+        # so we should receive nothing even though the callback
         # might finish eventually
-        assert recieved[len(records) * -1:] == []
+        assert received[len(records) * -1:] == []
 
     def test_cleanup(self):
         # Produce
@@ -157,12 +157,12 @@ class TestAvro(TestCase):
 
         # Consume
         self.bc.consume(
-            on_recieve=self.on_recieve,
+            on_receive=self.on_receive,
             timeout=1,
             loop=False,
             cleanup_every=2
         )
-        assert self.recieved[len(records) * -1:] == records
+        assert self.received[len(records) * -1:] == records
 
     def test_overflow_with_custom_config(self):
         self.bp = EasyAvroProducer(
