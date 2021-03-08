@@ -1,5 +1,6 @@
 avro
 msgpack-python
-python-avro
+# https://github.com/confluentinc/confluent-kafka-python/issues/610
+python-avro<=1.8.2
 python-confluent-kafka>=1.1.0,<2.0.0
 requests
