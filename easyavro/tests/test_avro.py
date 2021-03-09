@@ -3,12 +3,14 @@
 import os
 import uuid
 import time
+import json
+from typing import List
+from unittest import TestCase
 from os.path import join as opj
 from os.path import dirname as dn
 from os.path import abspath as ap
 
-from unittest import TestCase
-
+from confluent_kafka import Message
 from confluent_kafka.avro import CachedSchemaRegistryClient
 
 from easyavro import EasyAvroConsumer, EasyAvroProducer, schema
@@ -18,6 +20,18 @@ L = logging.getLogger('easyavro')
 L.propagate = False
 L.setLevel(logging.DEBUG)
 L.handlers = [logging.StreamHandler()]
+
+
+def psort(l):
+    def sort_by_uuid(p):
+        payload = p[1]
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+
+        if isinstance(payload, dict):
+            return payload['uuid']
+
+    return sorted(l, key=sort_by_uuid)
 
 
 class TestAvro(TestCase):
@@ -50,7 +64,7 @@ class TestAvro(TestCase):
             schema_registry_url='http://{}:4002'.format(self.testhost),
             kafka_brokers=['{}:4001'.format(self.testhost)],
             consumer_group='easyavro.testing',
-            kafka_topic=self.topic,
+            kafka_topics=[self.topic],
             offset='earliest'
         )
 
@@ -83,8 +97,12 @@ class TestAvro(TestCase):
         self.bp.produce(records)
 
         # Consume
-        self.bc.consume(on_receive=self.on_receive, timeout=1, loop=False)
-        assert self.received[len(records) * -1:] == records
+        self.bc.start(
+            on_receive=self.on_receive,
+            timeout=1,
+            loop=False
+        )
+        assert psort(self.received[len(records) * -1:]) == psort(records)
 
     def test_initial_wait(self):
         # Produce
@@ -95,13 +113,14 @@ class TestAvro(TestCase):
         self.bp.produce(records)
 
         # Consume
-        self.bc.consume(
+        self.bc.start(
             on_receive=self.on_receive,
             timeout=1,
             loop=False,
-            initial_wait=5
+            initial_wait=5,
+            num_messages=5
         )
-        assert self.received[len(records) * -1:] == records
+        assert psort(self.received[len(records) * -1:]) == psort(records)
 
     def test_on_receive_timeout(self):
         # Produce
@@ -116,7 +135,7 @@ class TestAvro(TestCase):
             schema_registry_url='http://{}:4002'.format(self.testhost),
             kafka_brokers=['{}:4001'.format(self.testhost)],
             consumer_group='easyavro.testing',
-            kafka_topic=self.topic,
+            kafka_topics=[self.topic],
             offset='earliest'
         )
         received = []
@@ -124,9 +143,8 @@ class TestAvro(TestCase):
         def on_receive(key: str, value: str) -> None:
             time.sleep(10)
             raise ValueError('hi')
-            L.info("Received message")
 
-        bc.consume(
+        bc.start(
             on_receive=on_receive,
             on_receive_timeout=1,
             timeout=1,
@@ -155,14 +173,21 @@ class TestAvro(TestCase):
         ]
         self.bp.produce(records)
 
+        def on_receive(messages: List[Message]) -> None:
+            for m in messages:
+                self.received.append((m.key(), m.value()))
+                L.info("Received message")
+
         # Consume
-        self.bc.consume(
-            on_receive=self.on_receive,
+        self.bc.start(
+            on_receive=on_receive,
             timeout=1,
             loop=False,
-            cleanup_every=2
+            cleanup_every=2,
+            num_messages=5,
+            receive_messages_in_callback=True
         )
-        assert self.received[len(records) * -1:] == records
+        assert psort(self.received[len(records) * -1:]) == psort(records)
 
     def test_overflow_with_custom_config(self):
         self.bp = EasyAvroProducer(
@@ -183,7 +208,7 @@ class TestAvro(TestCase):
         with self.assertRaises(BufferError):
             self.bp.produce(records)
 
-    def test_dont_overflow_with_batch_specified(self):
+    def test_do_not_overflow_with_batch_specified(self):
         self.bp = EasyAvroProducer(
             schema_registry_url='http://{}:4002'.format(self.testhost),
             kafka_brokers=['{}:4001'.format(self.testhost)],

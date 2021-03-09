@@ -171,14 +171,16 @@ The defaults are sane. They will pull offsets from the broker and set the topic 
 
 If you need to override any kafka level parameters, you may use the the `kafka_conf` (`dict`) initialization parameter on `Consumer`. It will override any of the defaults the `Consumer` uses. See the documentation for the `config` parameter to [`Consumer`](https://docs.confluent.io/current/clients/confluent-kafka-python/#consumer), [`AvroConsumer`](https://docs.confluent.io/current/clients/confluent-kafka-python/#confluent_kafka.avro.AvroConsumer) and the [list of librdkafka properties](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#global-configuration-properties).
 
-##### Parameters for `consume` function
+##### Parameters for `start` function
 
-*  `on_receive` (`Callable[[str, str], None]`) - Function that is executed (in a new thread) for each retrieved message.
+*  `on_receive` (`Callable[str, str]` or `Callable[List[Message]]`) - Function that is executed (in a new thread) for each retrieved message.
 *  `on_receive_timeout` (`int`) - Seconds the `Consumer` will wait for the calls to `on_receive` to exit before moving on. By default it will wait forever. You should set this to a reasonable maximum number seconds your `on_receive` callback will take to prevent dead-lock when the `Consumer` is exiting and trying to cleanup its spawned threads.
 *  `timeout` (`int`) - The `timeout` parameter to the `poll` function in `confluent-kafka`. Controls how long `poll` will block while waiting for messages.
 *  `loop` (`bool`) - If the `Consumer` will keep looping for message or break after retrieving the first chunk message. This is useful when testing.
 *  `initial_wait` (`int`)- Seconds the Consumer should wait before starting to consume. This is useful when testing.
 *  `cleanup_every` (`int`) - Try to cleanup spawned thread after this many messages.
+*  `num_messages` (`int`) - Consume this many messages from the topic at once. This can improve throughput when dealing with high-volume topics that can benefit from processing many messages at once.
+*  `receive_messages_in_callback` (`bool`) - Instead of calling the `on_receive` callback with key/value pairs, call it with `confluent_kafka.Message` objects. This requires the user to call `message.key()` and `message.value()` on each. This gives the user access to other message attributes like `message.topic()` in the callback. **Setting this parameter to `True` is recommended for any new code.**
 
 ```python
 from easyavro import EasyConsumer
@@ -191,7 +193,7 @@ bc = EasyConsumer(
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_receive=on_receive)
+bc.start(on_receive=on_receive)
 ```
 
 Or pass in your own [kafka config](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) dict.
@@ -211,7 +213,7 @@ bc = EasyConsumer(
         'offset.store.method': 'file'
     }
 )
-bc.consume(on_receive=on_receive)
+bc.start(on_receive=on_receive)
 ```
 
 Or pass in a value to use for the `auto.offset.reset` [topic config](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md#topic-configuration-properties) setting.
@@ -228,7 +230,7 @@ bc = EasyConsumer(
     kafka_topic='my-topic',
     offset='earliest'
 )
-bc.consume(on_receive=on_receive)
+bc.start(on_receive=on_receive)
 ```
 
 #### EasyConsumer
@@ -246,7 +248,7 @@ bc = EasyConsumer(
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_receive=on_receive)
+bc.start(on_receive=on_receive)
 ```
 
 You can unpack data as needed in the callback function
@@ -263,13 +265,36 @@ bc = EasyConsumer(
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_receive=on_receive)
+bc.start(on_receive=on_receive)
+```
+
+You can receive a list of Message objects instead of key/value pairs
+
+```python
+import msgpack
+from typing import List
+from easyavro import EasyConsumer
+from confluent_kafka import Message
+
+def on_receive(messages: List[Message]) -> None:
+    for m in messages:
+        print(
+            "Got Message - Topic:{}\nKey:{}\nValue:{}\n".format(m.topic(), m.key(), m.value()
+        )
+
+bc = EasyConsumer(
+    kafka_brokers=['localhost:4001'],
+    consumer_group='easyavro.testing',
+    kafka_topic='my-topic',
+)
+bc.start(on_receive=on_receive, num_messages=5, receive_messages_in_callback=True)
 ```
 
 
-#### EasyAvroProducer
+#### EasyAvroConsumer
 
-If you are using a Confluent SchemaRegistry this helper exists to match your topic name to existing schemas in the registry. Your schemas must already be available in the schema registry as `[topic]-key` and `[topic]-value`.
+If you are using a Confluent SchemaRegistry this helper exists to match your topic name to existing schemas in the registry. Your schemas must already be available in the schema registry as `[topic]-key` and `[topic]-value`. Pass the `schema_registry_url` parameter to EasyAvroConsumer and the rest is
+taken care of.
 
 ```python
 from easyavro import EasyAvroConsumer
@@ -278,11 +303,12 @@ def on_receive(key: str, value: str) -> None:
     print("Got Key:{}\nValue:{}\n".format(key, value))
 
 bc = EasyAvroConsumer(
+    schema_registry_url='http://localhost:4002',
     kafka_brokers=['localhost:4001'],
     consumer_group='easyavro.testing',
     kafka_topic='my-topic'
 )
-bc.consume(on_receive=on_receive)
+bc.start(on_receive=on_receive)
 ```
 
 ## Testing
@@ -320,5 +346,5 @@ docker run --net="host" easyavro
 
 ```
 conda env create environment.yml
-py.test -s -rxs -v
+pytest -s -rxs -v
 ```

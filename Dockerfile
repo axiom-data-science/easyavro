@@ -1,5 +1,5 @@
 FROM debian:9.5
-LABEL maintainer="Kyle Wilcox <kyle@axiomdatascience.com>"
+LABEL MAINTAINER="Kyle Wilcox <kyle@axds.co>"
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG C.UTF-8
 
@@ -16,30 +16,32 @@ RUN apt-get update && apt-get install -y \
         wget \
         && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/oracle-jdk8-installer
-
-# Copy over environment definition
-COPY environment.yml /tmp/environment.yml
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Setup CONDA (https://hub.docker.com/r/continuumio/miniconda3/~/dockerfile/)
-ENV MINICONDA_VERSION latest
-RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    curl -k -o /miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-$MINICONDA_VERSION-Linux-x86_64.sh && \
+ENV MINICONDA_VERSION py38_4.8.2
+ENV MINICONDA_SHA256 5bbb193fd201ebe25f4aeb3c58ba83feced6a25982ef4afa86d5506c3656c142
+RUN curl -k -o /miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-$MINICONDA_VERSION-Linux-x86_64.sh && \
+    echo $MINICONDA_SHA256 /miniconda.sh | sha256sum --check && \
     /bin/bash /miniconda.sh -b -p /opt/conda && \
     rm /miniconda.sh && \
-    /opt/conda/bin/conda config \
-        --set always_yes yes \
-        --set changeps1 no \
-        --set show_channel_urls True \
-        && \
-    /opt/conda/bin/conda env update -n root --file /tmp/environment.yml && \
-    /opt/conda/bin/conda clean -a -y
+    /opt/conda/bin/conda update -c conda-forge -n base conda && \
+    /opt/conda/bin/conda clean -afy && \
+    /opt/conda/bin/conda init && \
+    find /opt/conda/ -follow -type f -name '*.a' -delete && \
+    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
+    /opt/conda/bin/conda install -y -c conda-forge -n base mamba pip && \
+    /opt/conda/bin/conda clean -afy
 
 ENV PATH /opt/conda/bin:$PATH
 
-# Copy packrat contents and install
-ENV CODE_HOME /easyavro
-WORKDIR $CODE_HOME
-COPY . $CODE_HOME
+COPY environment.yml /tmp/
+RUN mamba env create -n runenv -f /tmp/environment.yml && \
+    echo "conda activate runenv" >> /root/.bashrc
 
-CMD ["py.test", "-s", "-rxs", "-v"]
+ENV PROJECT_ROOT /code
+RUN mkdir -p "$PROJECT_ROOT"
+COPY . $PROJECT_ROOT
+WORKDIR $PROJECT_ROOT
+
+CMD ["conda", "run", "-n", "runenv", "--no-capture-output", "pytest", "-s", "-rxs", "-v"]
