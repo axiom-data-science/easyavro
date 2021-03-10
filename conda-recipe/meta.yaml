@@ -1,6 +1,6 @@
 package:
   name: easyavro
-  version: "3.0.0"
+  version: "4.0.0"
 
 source:
   path: ../
@@ -17,7 +17,7 @@ requirements:
   run:
     - python-confluent-kafka >=1.1.0,<2.0.0
     - avro
-    - python-avro
+    - python-avro <=1.8.2
     - requests
     - msgpack-python
 
@@ -31,4 +31,4 @@ test:
 about:
   home: https://github.com/axiom-data-science/easyavro
   license: MIT License
-  summary: "A python helper for producing and consuming avro schema'd Kafka topics"
+  summary: "A python helper for producing and consuming Kafka topics"
